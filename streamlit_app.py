@@ -4,8 +4,8 @@ ESC - Urlaubsplan Transformation Tool
 Streamlit-App zur Transformation von Urlaubsplandaten aus Excel
 in konsolidierte CSV-Formate mit zusammenhängenden Abwesenheitsblöcken.
 
-Autor: Pete (E+SERVICE+CHECK Marketing)
-Erstellt: Januar 2026
+Autor: Peter Stieg (E+SERVICE+CHECK Marketing)
+Erstellt: 28. Januar 2026
 """
 
 import streamlit as st
@@ -18,7 +18,7 @@ import io
 # SEITENKONFIGURATION
 # ============================================================================
 st.set_page_config(
-    page_title="Urlaubsplan Transformation",
+    page_title="ESC // Odoo: Abwesenheitsgründe",
     page_icon="📅",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -201,7 +201,7 @@ def process_excel_file(uploaded_file):
 
 def main():
     # Header
-    st.title("📅 Urlaubsplan Transformation")
+    st.title("ESC // Odoo: Abwesenheitsgründe")
     st.markdown("""
     Diese Anwendung transformiert Excel-Urlaubspläne mit monatlichen Tabellenblättern 
     in ein strukturiertes CSV-Format mit konsolidierten Abwesenheitsblöcken.
@@ -209,7 +209,7 @@ def main():
     
     # Sidebar - Informationen
     with st.sidebar:
-        st.header("ℹ️ Anleitung")
+        st.header("ANLEITUNG")
         st.markdown("""
         **Schritt 1:** Excel-Datei hochladen
         
@@ -219,23 +219,23 @@ def main():
         
         ---
         
-        **Erwartetes Format:**
+        **ERWARTETES FORMAT**
         - Mehrere Tabellenblätter (Monate)
-        - Zeile 1: Datumsangaben
-        - Spalte A: Personalnummer
-        - Spalte B: Name (optional)
+        - Zeile 1: Datumsangaben (0-31)
+        - Spalte A: Personalnummer 
+        - Spalte B: Name
         - Ab Spalte C: Abwesenheiten
         
         ---
         
-        **Features:**
-        - ✅ Konsolidierung zusammenhängender Abwesenheiten
-        - ✅ Deutsches Datumsformat (Tag.Monat.Jahr)
-        - ✅ Automatische Jahr-Erkennung
-        - ✅ Verarbeitung mehrerer Monate
+        **FEATURES**
+        - Konsolidierung zusammenh. Abwesenh.
+        - Deutsches Datumsformat (T.M.J)
+        - Verarbeitung mehrerer Monate
+        - Automatische Jahr-Erkennung
         """)
         
-        st.header("📊 Statistiken")
+        st.header("STATISTIKEN")
         if 'processing_info' in st.session_state:
             info = st.session_state.processing_info
             st.metric("Verarbeitete Tabellenblätter", len(info['sheets']))
@@ -260,10 +260,10 @@ def main():
                 st.session_state.result_df = result_df
                 st.session_state.processing_info = processing_info
             
-            st.success(f"✅ Verarbeitung erfolgreich! {len(result_df)} Abwesenheitsblöcke erstellt.")
+            st.success(f"Verarbeitung erfolgreich: {len(result_df)} Abwesenheitsblöcke erstellt.")
             
             # Tabs für verschiedene Ansichten
-            tab1, tab2, tab3 = st.tabs(["📋 Vorschau", "📈 Statistiken", "📄 Verarbeitungsdetails"])
+            tab1, tab2, tab3 = st.tabs(["Vorschau", "Statistiken", "Verarbeitungsdetails"])
             
             with tab1:
                 st.subheader("Vorschau der transformierten Daten")
@@ -323,7 +323,7 @@ def main():
             
             # Download-Button
             st.markdown("---")
-            st.subheader("💾 Download")
+            st.subheader("Download")
             
             # CSV erstellen
             csv_buffer = io.StringIO()
@@ -331,13 +331,13 @@ def main():
             csv_data = csv_buffer.getvalue()
             
             # Dateiname mit Zeitstempel
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f'urlaubsplan_consolidated_{timestamp}.csv'
+            timestamp = datetime.now().strftime('%d.%m.%Y %H%M')
+            filename = f'odoo - abwesenheitsgruende {timestamp}.csv'
             
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
                 st.download_button(
-                    label="📥 CSV-Datei herunterladen",
+                    label="CSV-Datei herunterladen",
                     data=csv_data,
                     file_name=filename,
                     mime='text/csv',
@@ -345,12 +345,12 @@ def main():
                 )
         
         except Exception as e:
-            st.error(f"❌ Fehler beim Verarbeiten der Datei: {str(e)}")
+            st.error(f"Fehler beim Verarbeiten der Datei: {str(e)}")
             st.exception(e)
     
     else:
         # Platzhalter wenn keine Datei hochgeladen
-        st.info("👆 Bitte laden Sie eine Excel-Datei hoch, um zu beginnen.")
+        st.info("Bitte laden Sie eine Excel-Datei hoch, um zu beginnen.")
         
         # Beispiel-Datenstruktur anzeigen
         with st.expander("📖 Beispiel-Datenstruktur"):
@@ -360,9 +360,9 @@ def main():
             | Spalte A | Spalte B | Spalte C | Spalte D | Spalte E | ... |
             |----------|----------|----------|----------|----------|-----|
             | Heute ist | | 1.1.2026 | 2.1.2026 | 3.1.2026 | ... |
-            | 3 | Becker, Matthias | U | | K | ... |
-            | 35 | Korb, Thomas | | U | U | ... |
-            | 80 | Piur, Thomas | K | K | | ... |
+            | 1 | Müller, Michael | U | | K | ... |
+            | 2 | Schmidt, Thomas | | U | U | ... |
+            | 3 | Schneider, Andreas | K | K | | ... |
             
             **Abwesenheitsarten:**
             - U = Urlaub
