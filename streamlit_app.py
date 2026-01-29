@@ -99,8 +99,15 @@ def consolidate_absences(data_list):
 def process_excel_file(uploaded_file):
     """
     Verarbeitet die hochgeladene Excel-Datei und gibt das transformierte DataFrame zurück.
+    Unterstützt sowohl vereinfachte als auch vollständige Odoo-Formate.
     """
     xl_file = pd.ExcelFile(uploaded_file)
+    
+    # Liste der zu überspringenden Meta-Tabellenblätter
+    skip_sheets = [' Unterstützung', 'Unterstützung', 'Konfiguration', 'Mitarbeiter', 'Detailansicht']
+    
+    # Filtere nur Monats-Tabellenblätter
+    month_sheets = [s for s in xl_file.sheet_names if s not in skip_sheets]
     
     result_data = []
     processing_info = {
@@ -112,20 +119,40 @@ def process_excel_file(uploaded_file):
     progress_bar = st.progress(0)
     status_text = st.empty()
     
-    total_sheets = len(xl_file.sheet_names)
+    total_sheets = len(month_sheets)
     
-    for idx, sheet_name in enumerate(xl_file.sheet_names):
+    for idx, sheet_name in enumerate(month_sheets):
         status_text.text(f"Verarbeite Tabellenblatt {idx + 1}/{total_sheets}: {sheet_name}")
         progress_bar.progress((idx + 1) / total_sheets)
         
         year = extract_year_from_sheetname(sheet_name)
         
         df = pd.read_excel(uploaded_file, sheet_name=sheet_name, header=None)
-        date_row = df.iloc[0, :]
+        
+        # Auto-Erkennung der Dateistruktur
+        # Prüfe ob "Heute ist" in Zeile 0 oder Zeile 7 steht
+        is_full_format = False
+        date_row_idx = 0
+        first_data_row_idx = 1
+        
+        if df.shape[0] > 7 and df.iloc[7, 0] == "Heute ist":
+            # Vollständiges Odoo-Format
+            is_full_format = True
+            date_row_idx = 7
+            first_data_row_idx = 10
+        elif df.iloc[0, 0] == "Heute ist":
+            # Vereinfachtes Format
+            date_row_idx = 0
+            first_data_row_idx = 1
+        
+        date_row = df.iloc[date_row_idx, :]
         
         # Suche erste Spalte mit Datum
+        # Im vollen Format startet es bei Spalte 6, im vereinfachten bei Spalte 2
+        search_start = 6 if is_full_format else 2
         first_date_col = None
-        for col_idx in range(2, len(df.columns)):
+        
+        for col_idx in range(search_start, len(df.columns)):
             if pd.notna(date_row.iloc[col_idx]):
                 if isinstance(date_row.iloc[col_idx], (pd.Timestamp, datetime)):
                     first_date_col = col_idx
@@ -142,7 +169,7 @@ def process_excel_file(uploaded_file):
         entries_in_sheet = 0
         
         # Verarbeite alle Mitarbeiterzeilen
-        for row_idx in range(1, len(df)):
+        for row_idx in range(first_data_row_idx, len(df)):
             pers_nr = df.iloc[row_idx, 0]
             
             if pd.isna(pers_nr):
@@ -193,6 +220,8 @@ def process_excel_file(uploaded_file):
     status_text.empty()
     
     return result_df, processing_info
+
+
 
 
 # ============================================================================
